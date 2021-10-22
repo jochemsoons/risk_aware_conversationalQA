@@ -1,5 +1,6 @@
 __pychache__/
-data/**
-!data_preprocessing.py
+# !data
+data/*
+!data/data_preprocessing.py
 MSDialog_experiments/
 *.out
