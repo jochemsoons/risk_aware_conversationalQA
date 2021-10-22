@@ -1,6 +1,6 @@
 __pychache__/
-# !data
+!data
 data/*
-!data/data_preprocessing.py
+git add data/data_preprocessing.py -f
 MSDialog_experiments/
 *.out
