@@ -10,6 +10,7 @@ import torch as T
 from transformers import AutoTokenizer, AutoModel
 import sys
 sys.path.append('/home/lcur0071/Reproduction_repo/conversationalQA-master/ParlAI')
+
 from parlai.scripts.interactive import Interactive, rerank
 import argparse
 import gc
@@ -62,10 +63,8 @@ def save_to_memory(query, context, memory, questions, answers, questions_scores,
     memory[query][context] = {}
     with T.no_grad():
         memory[query][context]['embedding'] = T.squeeze(embedding_model(T.tensor([tokenizer.encode(context, add_special_tokens=True)]).to(device))[0])[0].detach().cpu()
-        memory[query][context]['questions_embeddings'] = [T.squeeze(embedding_model(T.tensor([tokenizer.encode(questions[i], add_special_tokens=True)]).to(device))[0])[0].detach().cpu() for i in range(min(len(questions), 10))] # hard coding max tolerance to save memory
+        memory[query][context]['questions_embeddings'] = [T.squeeze(embedding_model(T.tensor([tokenizer.encode(questions[i], add_special_tokens=True)]).to(device))[0])[0].detach().cpu() for i in range(min(len(questions), 10))]
         memory[query][context]['answers_embeddings'] = [T.squeeze(embedding_model(T.tensor([tokenizer.encode(answers[i], add_special_tokens=True)]).to(device))[0])[0].detach().cpu() for i in range(min(len(answers), 10))]
-        # memory[query][context]['questions_embeddings'] = [T.squeeze(embedding_model(T.tensor([tokenizer.encode(questions[i], add_special_tokens=True)]).to(device))[0])[0].detach().cpu() for i in range(10)] # hard coding max tolerance to save memory
-        # memory[query][context]['answers_embeddings'] = [T.squeeze(embedding_model(T.tensor([tokenizer.encode(answers[i], add_special_tokens=True)]).to(device))[0])[0].detach().cpu() for i in range(10)]
         memory[query][context]['questions'] = questions
         memory[query][context]['answers'] = answers
         memory[query][context]['questions_scores'] = T.tensor(questions_scores).detach().cpu()
@@ -86,7 +85,12 @@ def generate_batch_answer_candidates(batch, conversation_id, total_candidates):
     return positives + negatives
 
 
+
+
 def main(args):
+    # Set device to cude if available, cpu otherwise
+    device = T.device("cuda") if T.cuda.is_available() else T.device("cpu")
+
     logging.getLogger().setLevel(logging.INFO)
     limit_memory(1e11)
     device = "cuda:0" if T.cuda.is_available() else "cpu"
@@ -377,7 +381,8 @@ def main(args):
         print(train_score_correct)
         print(train_text_correct)
         '''
-        print("avg loss", np.mean(agent.loss_history))
+        print("avg loss train", np.mean(agent.loss_history))
+        agent.loss_history = [] # added
 
         ## test
         test_scores, test_q0_scores, test_q1_scores, test_q2_scores, test_oracle_scores, test_base_scores, test_score_scores, test_text_scores = [],[],[],[],[],[],[],[]
@@ -476,6 +481,11 @@ def main(args):
                             
                             memory = save_to_memory(query, context_, memory, questions_, answers_, questions_scores_, answers_scores_, tokenizer, embedding_model, device)
                         query_embedding, context_embedding_, questions_, answers_, questions_embeddings_, answers_embeddings_, questions_scores_, answers_scores_ = read_from_memory(query, context_, memory)
+
+                    agent.evaluate((query_embedding, context_embedding, questions_embeddings, answers_embeddings, questions_scores, answers_scores),\
+                        answer_reward, question_reward,\
+                        (query_embedding, context_embedding_, questions_embeddings_, answers_embeddings_, questions_scores_, answers_scores_)) # added
+
 
                     # evaluation
                     if (action == 0 or (action == 1 and question_reward == cq_penalty)) and not stop:
@@ -585,6 +595,8 @@ def main(args):
         print(test_score_correct)
         print(test_text_correct)
         '''
+        print("avg loss test", np.mean(agent.loss_history_evaluate)) # added
+        agent.loss_history_evaluate = [] # added
         
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
