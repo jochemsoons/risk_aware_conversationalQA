@@ -247,7 +247,7 @@ def main(args):
                     if action == 1 and question_reward < 0:
                         bad_questions += 1
 
-                    if args.user_tolerance < bad_questions-1:
+                    if bad_questions > args.user_tolerance:
                         q_done = True
 
                     ###########################################    
@@ -487,7 +487,7 @@ def main(args):
                     if action == 1 and question_reward < 0:
                         bad_questions += 1
 
-                    if args.user_tolerance < bad_questions-1:
+                    if bad_questions > args.user_tolerance:
                         q_done = True
 
                     ###########################################
