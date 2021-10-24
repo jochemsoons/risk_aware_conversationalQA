@@ -115,6 +115,6 @@ class User:
             else:
                 # the agent asks a bad question  
                 reward = self.cq_penalty
-                done = True
+                # done = True # muted this line
                 context_ = context + ' [SEP] ' + top_n_question[0] + ' [SEP] ' + 'This question is not relevant.'
             return context_, reward, done, top_n_question[correct_question_id], patience_used
