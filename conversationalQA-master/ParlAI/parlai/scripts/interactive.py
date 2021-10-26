@@ -105,10 +105,10 @@ def create_reranker(opt, print_parser=None):
         # world.acts[1]['text_candidate'] returns the rank
 
 def rerank(world, human_input, history, sampled_candidates):
-    try:
-        print(world.acts[1]['text_candidates'])
-    except:
-        pass
+    # try:
+    #     print(world.acts[1]['text_candidates'])
+    # except:
+    #     pass
     #world.parley(human_input, history, sampled_candidates)
     #return world.acts[1]['text_candidates'] 
     return world.parley(human_input, history, sampled_candidates)

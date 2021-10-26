@@ -29,6 +29,8 @@ class User:
         self.anger = 0
         self.cq_reward = cq_reward
         self.cq_penalty = cq_penalty
+        self.bad_q_received = 0
+        self.done = False
 
     def respond_to_question(self, conversation_id, question):
         '''
@@ -97,6 +99,7 @@ class User:
         elif action == 1:
             # agent asks clarifying question, find corresponding answer in the dataset and return
             done = False
+            self.done = False
             correct_question_id = -1
             user_response_text = ''
             for qid in range(len(top_n_question)):
@@ -105,9 +108,9 @@ class User:
                     continue
                 else:
                     if correct_question_id == -1:
-                        #logging.info("Good CQ.")
                         correct_question_id = qid
                         user_response_text = response
+            
             if 0 <= correct_question_id <= (use_top_k - 1):
                 reward = self.cq_reward
                 context_ = context + ' [SEP] ' + top_n_question[correct_question_id] + ' [SEP] ' + user_response_text
@@ -115,6 +118,12 @@ class User:
             else:
                 # the agent asks a bad question  
                 reward = self.cq_penalty
-                # done = True # muted this line
+                self.bad_q_received += 1
+                
+                if self.bad_q_received > self.tolerance:
+                    self.done = True
+                    done = True
+                    self.bad_q_received = 0
+
                 context_ = context + ' [SEP] ' + top_n_question[0] + ' [SEP] ' + 'This question is not relevant.'
             return context_, reward, done, top_n_question[correct_question_id], patience_used

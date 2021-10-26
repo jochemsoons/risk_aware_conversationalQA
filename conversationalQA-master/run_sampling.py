@@ -190,7 +190,6 @@ def main(args):
                 n_round = 0
                 tolerance_used = 0
                 q_done = False
-                bad_questions = 0 # addded
                 stop, base_stop, score_stop, text_stop = False,False,False,False
                 print('-------- train batch %.0f conversation %.0f/%.0f --------' % (batch_serial, batch_size*(batch_serial) + conv_serial + 1, train_size))
                 
@@ -230,28 +229,14 @@ def main(args):
                     base_action = base_agent.choose_action(query_embedding, context_embedding)
                     score_action = score_agent.choose_action(questions_scores, answers_scores)
                     text_action = text_agent.choose_action(query_embedding, context_embedding, questions_embeddings, answers_embeddings)
-                    
-                    # WRONG CODE
-                    # #context_, question_reward, q_done, good_question, tolerance_this_turn = user.update_state(train_id, context, 1, questions, answers, use_top_k = args.topn - tolerance_used)
-                    # context_, question_reward, q_done, good_question, tolerance_this_turn = user.update_state(train_id, context, 1, questions, answers, use_top_k = args.topn)
-                    # tolerance_used = max(tolerance_used + tolerance_this_turn, args.topn)
-                    # _, answer_reward, _, _, _ = user.update_state(train_id, context, 0, questions, answers, use_top_k = args.topn - tolerance_used)
-                    # action_reward = [answer_reward, question_reward][action]
-                    # print('action', action, 'base_action', base_action, 'score_action', score_action,'text_action', text_action, 'answer reward', answer_reward, 'question reward', question_reward, 'q done', q_done)
 
-                    ############## CORRECT CODE ############## # added
-                    context_, question_reward, q_done, good_question, _ = user.update_state(train_id, context, 1, questions, answers, use_top_k = args.topn)
-                    _, answer_reward, _, _, _ = user.update_state(train_id, context, 0, questions, answers, use_top_k = args.topn)
+                    #context_, question_reward, q_done, good_question, tolerance_this_turn = user.update_state(train_id, context, 1, questions, answers, use_top_k = args.topn - tolerance_used)
+                    context_, question_reward, q_done, good_question, tolerance_this_turn = user.update_state(train_id, context, 1, questions, answers, use_top_k = args.topn)
+                    # tolerance_used = max(tolerance_used + tolerance_this_turn, args.topn)
+                    _, answer_reward, _, _, _ = user.update_state(train_id, context, 0, questions, answers, use_top_k = args.topn - tolerance_used)
+                    # action_reward = [answer_reward, question_reward][action]
                     print('action', action, 'base_action', base_action, 'score_action', score_action,'text_action', text_action, 'answer reward', answer_reward, 'question reward', question_reward, 'q done', q_done)
 
-                    if action == 1 and question_reward < 0:
-                        bad_questions += 1
-
-                    if bad_questions > args.user_tolerance:
-                        q_done = True
-
-                    ###########################################    
-                 
                     if n_round >= args.user_patience:
                         q_done = True
 
@@ -360,7 +345,7 @@ def main(args):
                 T.save(memory, args.dataset_name + '_experiments/embedding_cache/' + args.reranker_name + '/' + str(args.cv) + '/train/memory.batchsave' + str(batch_serial))
             else:
                 T.save(memory, args.dataset_name + '_experiments/embedding_cache/' + args.reranker_name + '/train/memory.batchsave' + str(batch_serial))
-            
+        
             del memory
             T.cuda.empty_cache()
 
@@ -430,7 +415,6 @@ def main(args):
                 n_round = 0
                 tolerance_used = 0
                 q_done = False
-                bad_questions = 0 # added
                 stop, base_stop, score_stop, text_stop = False,False,False,False
                 print('-------- test batch %.0f conversation %.0f/%.0f --------' % (batch_serial, batch_size*(batch_serial) + conv_serial + 1, test_size))
                 while not q_done:
@@ -471,26 +455,12 @@ def main(args):
                     score_action = score_agent.choose_action(questions_scores, answers_scores)
                     text_action = text_agent.choose_action(query_embedding, context_embedding, questions_embeddings, answers_embeddings)
                     
-                    # WRONG CODE
-                    # #context_, question_reward, q_done, good_question, tolerance_this_turn = user.update_state(test_id, context, 1, questions, answers, use_top_k = args.topn - tolerance_used)
-                    # context_, question_reward, q_done, good_question, tolerance_this_turn = user.update_state(test_id, context, 1, questions, answers, use_top_k = args.topn)
-                    # tolerance_used = max(tolerance_used + tolerance_this_turn, args.topn)
-                    # _, answer_reward, _, _, _ = user.update_state(test_id, context, 0, questions, answers, use_top_k = args.topn - tolerance_used)
-                    # action_reward = [answer_reward, question_reward][action]
-                    # print('action', action, 'base_action', base_action, 'score_action', score_action,'text_action', text_action, 'answer reward', answer_reward, 'question reward', question_reward, 'q done', q_done)
-                    
-                    ############## CORRECT CODE ############## # added
+                    #context_, question_reward, q_done, good_question, tolerance_this_turn = user.update_state(test_id, context, 1, questions, answers, use_top_k = args.topn - tolerance_used)
                     context_, question_reward, q_done, good_question, tolerance_this_turn = user.update_state(test_id, context, 1, questions, answers, use_top_k = args.topn)
-                    _, answer_reward, _, _, _ = user.update_state(test_id, context, 0, questions, answers, use_top_k = args.topn)
+                    #tolerance_used = max(tolerance_used + tolerance_this_turn, args.topn)
+                    _, answer_reward, _, _, _ = user.update_state(test_id, context, 0, questions, answers, use_top_k = args.topn - tolerance_used)
+                    #action_reward = [answer_reward, question_reward][action]
                     print('action', action, 'base_action', base_action, 'score_action', score_action,'text_action', text_action, 'answer reward', answer_reward, 'question reward', question_reward, 'q done', q_done)
-
-                    if action == 1 and question_reward < 0:
-                        bad_questions += 1
-
-                    if bad_questions > args.user_tolerance:
-                        q_done = True
-
-                    ###########################################
 
                     if n_round >= args.user_patience:
                         q_done = True
@@ -635,6 +605,6 @@ if __name__ == '__main__':
     parser.add_argument('--cv', type = int, default = -1)
     parser.add_argument('--reranker_name', type = str, default = 'Poly')
     parser.add_argument('--user_patience', type = int, default = 10)
-    parser.add_argument('--user_tolerance', type = int, default = 0) # added
     args = parser.parse_args()
+    print("RUN ARGS:", args)
     main(args)
