@@ -1,5 +1,5 @@
 from user import User
-from dataset_25 import ConversationDataset
+from dataset_bm25 import ConversationDataset
 from agent import Agent, BaseAgent, ScoreAgent, TextAgent
 import logging
 import numpy as np
@@ -9,10 +9,6 @@ import os
 import torch as T
 from transformers import AutoTokenizer, AutoModel
 import sys
-sys.path.append('/home/lcur0071/Reproduction_repo/conversationalQA-master/ParlAI')
-sys.path.append('/home/jochemsoons/AI_MSC_UBUNTU/IR2/Repository/conversationalQA-master/ParlAI')
-
-from parlai.scripts.interactive import Interactive, rerank
 import argparse
 import gc
 
@@ -69,15 +65,26 @@ def save_to_memory(query, context, memory, questions, answers, questions_scores,
     gc.collect()
     return memory
 
+# def generate_batch_question_candidates(batch, conversation_id, ignore_questions, total_candidates):
+#     positives = [batch['conversations'][conversation_id][turn_id] for turn_id in range(len(batch['conversations'][conversation_id])) if turn_id % 2 == 1 and turn_id != len(batch['conversations'][conversation_id])-1]
+#     filtered_positives = [cand for cand in positives if cand not in ignore_questions]
+#     negatives = random.sample([response for response in batch['responses_pool'] if response not in positives], total_candidates - len(filtered_positives))
+#     return filtered_positives + negatives
+
+# def generate_batch_answer_candidates(batch, conversation_id, total_candidates):
+#     positives = [batch['conversations'][conversation_id][-1]]
+#     negatives = random.sample([answer for answer in batch['answers_pool'] if answer not in positives], total_candidates - len(positives))
+#     return positives + negatives
+
 def generate_batch_question_candidates(batch, conversation_id, ignore_questions, total_candidates):
     positives = [batch['conversations'][conversation_id][turn_id] for turn_id in range(len(batch['conversations'][conversation_id])) if turn_id % 2 == 1 and turn_id != len(batch['conversations'][conversation_id])-1]
     filtered_positives = [cand for cand in positives if cand not in ignore_questions]
-    negatives = random.sample([response for response in batch['responses_pool'] if response not in positives], total_candidates - len(filtered_positives))
+    negatives = [response for response in batch['responses_pool'] if response not in positives][:total_candidates - len(filtered_positives)]
     return filtered_positives + negatives
 
 def generate_batch_answer_candidates(batch, conversation_id, total_candidates):
     positives = [batch['conversations'][conversation_id][-1]]
-    negatives = random.sample([answer for answer in batch['answers_pool'] if answer not in positives], total_candidates - len(positives))
+    negatives = [answer for answer in batch['answers_pool'] if answer not in positives][:total_candidates - len(positives)] 
     return positives + negatives
 
 # Function for setting the seed
@@ -93,6 +100,8 @@ def set_seed(seed):
         T.backends.cudnn.benchmark = False
 
 def main(args):
+    sys.path.append(args.path_to_parlai)
+    from parlai.scripts.interactive import Interactive, rerank
     logging.getLogger().setLevel(logging.INFO)
     limit_memory(1e11)
     if args.seed:
@@ -533,6 +542,7 @@ if __name__ == '__main__':
     parser.add_argument('--user_patience', type = int, default = 10)
     parser.add_argument('--user_tolerance', type = int, default = 0)
     parser.add_argument('--seed', type = int, default = None)
+    parser.add_argument('--path_to_parlai', type = str, default = './ParlAI')
     args = parser.parse_args()
     print("#" * 80)
     print("RUNNING ARGUMENTS:")

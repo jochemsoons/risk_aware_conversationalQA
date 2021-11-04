@@ -32,7 +32,7 @@ class ConversationDataset():
         
         # loop over conversations
         for i in range(len(conversations)):
-            print('creating batch 'i, ,'/',len(conversations))
+            print('creating batch', i ,'/', len(conversations))
 
             # tokenize query and corpus and calculate best matching documents given BM25
             batch_full = False

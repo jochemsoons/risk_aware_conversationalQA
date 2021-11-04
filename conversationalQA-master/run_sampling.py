@@ -9,10 +9,6 @@ import os
 import torch as T
 from transformers import AutoTokenizer, AutoModel
 import sys
-sys.path.append('/home/lcur0071/Reproduction_repo/conversationalQA-master/ParlAI')
-sys.path.append('/home/jochemsoons/AI_MSC_UBUNTU/IR2/Repository/conversationalQA-master/ParlAI')
-
-from parlai.scripts.interactive import Interactive, rerank
 import argparse
 import gc
 
@@ -93,6 +89,8 @@ def set_seed(seed):
         T.backends.cudnn.benchmark = False
 
 def main(args):
+    sys.path.append(args.path_to_parlai)
+    from parlai.scripts.interactive import Interactive, rerank
     logging.getLogger().setLevel(logging.INFO)
     limit_memory(1e11)
     if args.seed:
@@ -535,6 +533,7 @@ if __name__ == '__main__':
     parser.add_argument('--user_patience', type = int, default = 10)
     parser.add_argument('--user_tolerance', type = int, default = 0)
     parser.add_argument('--seed', type = int, default = None)
+    parser.add_argument('--path_to_parlai', type = str, default = './ParlAI')
     args = parser.parse_args()
     print("#" * 80)
     print("RUNNING ARGUMENTS:")
