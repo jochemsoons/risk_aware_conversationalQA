@@ -20,7 +20,7 @@ class LinearDeepQNetwork(nn.Module):
 
         self.optimizer = optim.Adam(self.parameters(), lr=lr, weight_decay = weight_decay)
         self.loss = nn.MSELoss()
-        self.device = T.device('cuda' if T.cuda.is_available() else 'cpu')
+        self.device = T.device("cuda:0") if T.cuda.is_available() else T.device("cpu")
         self.to(self.device)
 
     def forward(self, state):
@@ -40,7 +40,7 @@ class LinearDeepNetwork(nn.Module):
 
         self.optimizer = optim.Adam(self.parameters(), lr=lr, weight_decay = weight_decay)
         self.loss = nn.MSELoss()
-        self.device = T.device('cuda' if T.cuda.is_available() else 'cpu')
+        self.device = T.device("cuda:0") if T.cuda.is_available() else T.device("cpu")
         self.to(self.device)
 
     def forward(self, state):
@@ -75,7 +75,7 @@ class Agent():
         self.loss_history_evaluate = [] # added
 
         self.Q = LinearDeepQNetwork(self.lr, self.lr_decay, self.weight_decay, self.n_actions, self.input_dims)
-        self.device = T.device("cuda")
+        self.device = T.device("cuda:0") if T.cuda.is_available() else T.device("cpu")
         self.Q.to(self.device)
 
     def choose_action(self, query_embedding, context_embedding, questions_embeddings, answers_embeddings, question_scores, answer_scores):
@@ -165,67 +165,64 @@ class Agent():
             
         self.decrement_epsilon()
 
-    def evaluate(self, state, a_reward, q_reward, state_): # added
+    def evaluate(self, state, a_reward, q_reward, state_):
+        with T.no_grad():
+            self.experiences_evaluate.append([state, a_reward, q_reward, state_])
+            
+            if a_reward < q_reward:
+                for da in range(self.data_augment):
+                    self.experiences_evaluate.append([state, a_reward, q_reward, state_])
+            
+            # sample from past experiences
+            exps = random.sample(self.experiences, min(self.experiences_replay_times, len(self.experiences)))
+            exps.append([state, a_reward, q_reward, state_])
 
-        self.experiences_evaluate.append([state, a_reward, q_reward, state_])
-        
-        if a_reward < q_reward:
-            for da in range(self.data_augment):
-                self.experiences_evaluate.append([state, a_reward, q_reward, state_])
-        
-        # sample from past experiences
-        exps = random.sample(self.experiences, min(self.experiences_replay_times, len(self.experiences)))
-        exps.append([state, a_reward, q_reward, state_])
+            for exp in exps:
+                state, a_reward, q_reward, state_ = exp[0], exp[1], exp[2], exp[3]
 
-        for exp in exps:
-            state, a_reward, q_reward, state_ = exp[0], exp[1], exp[2], exp[3]
+                query_embedding, context_embedding, questions_embeddings, answers_embeddings, question_scores, answer_scores = state[0], state[1], state[2], state[3], state[4], state[5]
+                query_embedding, context_embedding_, questions_embeddings_, answers_embeddings_, question_scores_, answer_scores_ = state_[0], state_[1], state_[2], state_[3], state_[4], state_[5]
 
-            query_embedding, context_embedding, questions_embeddings, answers_embeddings, question_scores, answer_scores = state[0], state[1], state[2], state[3], state[4], state[5]
-            query_embedding, context_embedding_, questions_embeddings_, answers_embeddings_, question_scores_, answer_scores_ = state_[0], state_[1], state_[2], state_[3], state_[4], state_[5]
-
-            encoded_q = questions_embeddings[0]
-            for i in range(1, self.top_k):
-                encoded_q = T.cat((encoded_q, questions_embeddings[i]), dim=0)
-
-            encoded_state = T.cat((query_embedding, context_embedding), dim=0)
-            encoded_state = T.cat((encoded_state, encoded_q), dim=0)
-            encoded_state = T.cat((encoded_state, answers_embeddings[0]), dim=0)
-            encoded_state = T.cat((encoded_state, question_scores[:self.top_k]), dim=0)
-            encoded_state = T.cat((encoded_state, answer_scores[:1]), dim=0) 
-
-            encoded_state_ = None
-            if questions_embeddings_ is not None and answers_embeddings_ is not None:
-                encoded_q_ = questions_embeddings_[0]
+                encoded_q = questions_embeddings[0]
                 for i in range(1, self.top_k):
-                    encoded_q_ = T.cat((encoded_q_, questions_embeddings_[i]), dim=0)
+                    encoded_q = T.cat((encoded_q, questions_embeddings[i]), dim=0)
+
+                encoded_state = T.cat((query_embedding, context_embedding), dim=0)
+                encoded_state = T.cat((encoded_state, encoded_q), dim=0)
+                encoded_state = T.cat((encoded_state, answers_embeddings[0]), dim=0)
+                encoded_state = T.cat((encoded_state, question_scores[:self.top_k]), dim=0)
+                encoded_state = T.cat((encoded_state, answer_scores[:1]), dim=0) 
+
+                encoded_state_ = None
+                if questions_embeddings_ is not None and answers_embeddings_ is not None:
+                    encoded_q_ = questions_embeddings_[0]
+                    for i in range(1, self.top_k):
+                        encoded_q_ = T.cat((encoded_q_, questions_embeddings_[i]), dim=0)
+                    
+                    encoded_state_ = T.cat((query_embedding, context_embedding_), dim=0)
+                    encoded_state_ = T.cat((encoded_state_, encoded_q_), dim=0)
+                    encoded_state_ = T.cat((encoded_state_, answers_embeddings_[0]), dim=0)
+                    encoded_state_ = T.cat((encoded_state_, question_scores_[:self.top_k]), dim=0)
+                    encoded_state_ = T.cat((encoded_state_, answer_scores_[:1]), dim=0)
                 
-                encoded_state_ = T.cat((query_embedding, context_embedding_), dim=0)
-                encoded_state_ = T.cat((encoded_state_, encoded_q_), dim=0)
-                encoded_state_ = T.cat((encoded_state_, answers_embeddings_[0]), dim=0)
-                encoded_state_ = T.cat((encoded_state_, question_scores_[:self.top_k]), dim=0)
-                encoded_state_ = T.cat((encoded_state_, answer_scores_[:1]), dim=0)
-            
-            # self.Q.optimizer.zero_grad()
-            states = T.tensor(encoded_state, dtype=T.float).to(self.device)
-            a_rewards = T.tensor(a_reward).to(self.device)
-            q_rewards = T.tensor(q_reward).to(self.device)
-            states_ = T.tensor(encoded_state_, dtype=T.float).to(self.device) if encoded_state_ is not None else None
+                states = T.tensor(encoded_state, dtype=T.float).to(self.device)
+                a_rewards = T.tensor(a_reward).to(self.device)
+                q_rewards = T.tensor(q_reward).to(self.device)
+                states_ = T.tensor(encoded_state_, dtype=T.float).to(self.device) if encoded_state_ is not None else None
 
-            pred = self.Q.forward(states)
-            q_next = self.Q.forward(states_).max() if encoded_state_ is not None else T.tensor(0).to(self.device)
-            q_target = T.tensor([a_rewards, q_rewards + self.gamma*q_next]).to(self.device) if encoded_state_ is not None else T.tensor([a_rewards, q_rewards]).to(self.device)
+                pred = self.Q.forward(states)
+                q_next = self.Q.forward(states_).max() if encoded_state_ is not None else T.tensor(0).to(self.device)
+                q_target = T.tensor([a_rewards, q_rewards + self.gamma*q_next]).to(self.device) if encoded_state_ is not None else T.tensor([a_rewards, q_rewards]).to(self.device)
 
-            loss = self.Q.loss(q_target, pred).to(self.device)
-            # l1 penalty
-            l1 = 0
-            for p in self.Q.parameters():
-                l1 += p.abs().sum()
-            
-            loss = loss + self.weight_decay * l1
-            self.loss_history_evaluate.append(loss.item())
-            # loss.backward()
-            # self.Q.optimizer.step()     
-
+                loss = self.Q.loss(q_target, pred).to(self.device)
+                # l1 penalty
+                l1 = 0
+                for p in self.Q.parameters():
+                    l1 += p.abs().sum()
+                
+                loss = loss + self.weight_decay * l1
+                self.loss_history_evaluate.append(loss.item())
+              
 
 class BaseAgent():
     '''
@@ -240,7 +237,7 @@ class BaseAgent():
         self.loss_history = []
 
         self.Q = LinearDeepNetwork(self.lr, self.lr_decay, self.weight_decay, self.n_actions, self.input_dims)
-        self.device = T.device("cuda")
+        self.device = T.device("cuda:0") if T.cuda.is_available() else T.device("cpu")
         self.Q.to(self.device)
 
     def choose_action(self, query_embedding, context_embedding):
@@ -300,7 +297,7 @@ class ScoreAgent():
         self.loss_history = []
 
         self.Q = LinearDeepQNetwork(self.lr, self.lr_decay, self.weight_decay, self.n_actions, self.input_dims)
-        self.device = T.device("cuda")
+        self.device = T.device("cuda:0") if T.cuda.is_available() else T.device("cpu")
         self.Q.to(self.device)
 
     def choose_action(self, question_scores, answer_scores):
@@ -395,7 +392,7 @@ class TextAgent():
         self.loss_history = []
 
         self.Q = LinearDeepQNetwork(self.lr, self.lr_decay, self.weight_decay, self.n_actions, self.input_dims)
-        self.device = T.device("cuda")
+        self.device = T.device("cuda:0") if T.cuda.is_available() else T.device("cpu")
         self.Q.to(self.device)
 
     def choose_action(self, query_embedding, context_embedding, questions_embeddings, answers_embeddings):
