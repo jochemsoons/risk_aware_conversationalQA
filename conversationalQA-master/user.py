@@ -12,7 +12,7 @@ class User:
     After the bad question count reaches the patience threshold,
     the user will quit and send back a signal of that.
     '''
-    def __init__(self, dataset, cq_reward, cq_penalty, tolerance = 2, patience = 5):
+    def __init__(self, dataset, cq_reward, cq_penalty, tolerance, patience):
         '''
         :param dataset: (class) The dataset. The default MSDialog-complete dataset format is described in 
                         https://ciir.cs.umass.edu/downloads/msdialog/ 
@@ -30,7 +30,6 @@ class User:
         self.cq_reward = cq_reward
         self.cq_penalty = cq_penalty
         self.bad_q_received = 0
-        self.done = False
 
     def respond_to_question(self, conversation_id, question):
         '''
@@ -76,6 +75,7 @@ class User:
         The agent action should be 0 (retrieve an answer) or 1 (ask clarifying question)
         '''
         patience_used = 0
+        done = False
         if action == 0:
             # agent answer the question, evaluate the answer
             n = len(top_n_answer)
@@ -95,11 +95,10 @@ class User:
             
             if reward > 1:
                 reward = 1
-            return context_, reward, True, None, patience_used
+            return context_, reward, done, None
         elif action == 1:
             # agent asks clarifying question, find corresponding answer in the dataset and return
             done = False
-            self.done = False
             correct_question_id = -1
             user_response_text = ''
             for qid in range(len(top_n_question)):
@@ -111,19 +110,19 @@ class User:
                         correct_question_id = qid
                         user_response_text = response
             
-            if 0 <= correct_question_id <= (use_top_k - 1):
+            if 0 <= correct_question_id <= self.tolerance:
+                # the agent asks a good question within tolerance range
                 reward = self.cq_reward
                 context_ = context + ' [SEP] ' + top_n_question[correct_question_id] + ' [SEP] ' + user_response_text
-                patience_used = correct_question_id
+                good_question = top_n_question[correct_question_id]
             else:
-                # the agent asks a bad question  
+                # correct question outside tolerance range, conversation can end
+                done = True  
                 reward = self.cq_penalty
-                self.bad_q_received += 1
-                
-                if self.bad_q_received > self.tolerance:
-                    self.done = True
-                    done = True
-                    self.bad_q_received = 0
-
                 context_ = context + ' [SEP] ' + top_n_question[0] + ' [SEP] ' + 'This question is not relevant.'
-            return context_, reward, done, top_n_question[correct_question_id], patience_used
+                if correct_question_id != -1:
+                    good_question = top_n_question[correct_question_id]
+                else:
+                    good_question = None
+ 
+            return context_, reward, done, good_question
