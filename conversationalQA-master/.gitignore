@@ -4,3 +4,4 @@ data/*
 MSDialog_experiments/
 *.out
 *.job
+*.pyc
