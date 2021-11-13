@@ -461,7 +461,7 @@ def main(args):
                         test_text_scores.append(answer_reward if text_action == 0 else 0)
                         test_text_worse.append(1 if (text_action == 0 and answer_reward < float(1/args.topn) and question_reward == cq_reward) \
                             or (text_action == 1  and question_reward == cq_penalty) else 0)
-                        text_action
+                        text_action = None
 
                     # Baseline evaluation
                     if n_round == 0:
