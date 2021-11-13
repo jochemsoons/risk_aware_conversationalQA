@@ -3,3 +3,4 @@ data/*
 !data/data_preprocessing.py
 MSDialog_experiments/
 *.out
+*.job

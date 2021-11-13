@@ -1,4 +1,4 @@
-name: ir2
+name: risk_aware_agent
 channels:
   - pytorch
   - conda-forge
@@ -153,5 +153,3 @@ dependencies:
     - werkzeug==1.0.1
     - widgetsnbextension==3.5.1
     - kaggle==1.5.12
-    - psutil==5.8.0
-    - typing_extensions==3.10.0.2
