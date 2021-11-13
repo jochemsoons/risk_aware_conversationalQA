@@ -8,6 +8,9 @@ This repository has been used to perform a reproduction study of the following p
 
 This repository is based on the repository made available by the authors, which can be found [through this link](https://github.com/zhenduow/conversationalQA). The original paper can be found [here](https://dl.acm.org/doi/abs/10.1145/3442381.3449893) and the reproduction study can be found [here](https://github.com/jochemsoons/risk_aware_conversationalQA/blob/main/Reproduction_Study__Controlling_the_Risk_of_Conversational_Search_via_Reinforcement_Learning.pdf).
 
+- Authors of reproduction study: Jochem Soons, Niek IJzerman & Jeroen van Wely
+- This study has been performed for the 2021 Information Retrieval 2 course at the University of Amsterdam, as part of the master's programme Artificial Intelligence.
+- Supervisors: Mohammad Alian Nejadi & Evangelos Kanoulas.
 
 ## Requirements
 In the ParlAi folder, a requirements.txt file can be found that can be used to install required packages. We suggest to use an [Anaconda](https://docs.conda.io/en/latest/) environment. That can be installed using the environment.yml file in this repository:
