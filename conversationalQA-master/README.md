@@ -60,8 +60,7 @@ A risk-aware conversational search system consisting of pretrained answer and qu
     
     If you get an error of dictionary size mismatching, this is because that the pretrained model checkpoints has a dictionary that's larger than the fine-tune dataset. To solve this problem, before running the fine-tuning script, copy the downloaded pretrained dict file `ParlAI/data/models/pretrained_transformers/poly_model_huge_reddit/model.dict` to `ParlAI/data/models/pretrained_transformers/model_poly/` twice and rename them to `answer.dict` and `question.dict`. Then run the above fine-tuning script. Perform the same steps for the bi-directional encoder (i.e. copy the model.dict file twice from the ./bi_model_huge_reddit folder to the model_bi folder, and name them again answer.dict and question.dict).
 
-
-Now you can run the following scripts without getting an error of dictionary size mismatching:
+    Now you can run the following scripts without getting an error of dictionary size mismatching:
     ```
     $ cd ParlAI
     $ python3 -u examples/train_model.py \
@@ -107,6 +106,7 @@ Now you can run the following scripts without getting an error of dictionary siz
         --model-file zoo:pretrained_transformers/model_bi/question\
         --ignore-bad-candidates True  --eval-candidates batch
     ```
+    
     The fine-tuning code is based on [ParlAI poly-encoder](https://github.com/facebookresearch/ParlAI/tree/master/projects/polyencoder/), but we modify several scripts for our needs. We do not recommended downloading the original ParlAI code and replace the ParlAI folder in this program. The original training of the encoders are done on 8 x GPU 32GB. We decrease the batch size and therefore the code is able to run it on 4 x GPU 11GB (GeForce RTX 2080Ti).
 1. Run the main experiments. To run the experiments, use the following code:
     ```
@@ -114,7 +114,7 @@ Now you can run the following scripts without getting an error of dictionary siz
     ```
     `--dataset_name` can be 'MSDialog', 'UDC', or 'Opendialkg' currently. `--reranker_name` can be 'Poly' or 'Bi' currently. `--topn` means the top n reranked candidates are considered correct, i.e. `--topn ` computes recall@1. `--cv` selects the cross validation fold. Because the MSDialog is small it is adviced to use cross validation. `--cv` can be set to 0,1,2,3,4 or 5 for the MSDialog dataset. Set `--cv -1` if you want to turn of cross validation. `--n_epochs` sets the amount of epochs. `--batch_size` sets the batch size. `--cq_reward` sets the reward if a correct question is asked. `--user_patience` corresponds to the maximum amount of turns between user and agent before the user leaves the conversation. `--user_tolerance` corresponds to the amount of bad questions that can be asked before the user leaves the conversation. `--seed` sets the seed to run the experiments. `--path_to_parlai` should correspond to the path to the ParlAI map.
     
-The experiment would take a couple of hours to one day. So, it's recommended to save the results to a log file.
+    The experiment would take a couple of hours to one day. So, it's recommended to save the results to a log file.
 
 2. Run the BM25 negative sampling experiments. To run the experiments, use the following code:
     ```
