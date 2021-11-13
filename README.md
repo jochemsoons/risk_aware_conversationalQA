@@ -1,4 +1,10 @@
-# Controlling the Risk of Conversational Search via Reinforcement Learning
+# Reproduction study: Controlling the Risk of Conversational Search via Reinforcement Learning
+This repository has been used to perform a reproduction study of the following paper:
+
+Wang, Z., & Ai, Q. (2021, April). Controlling the Risk of Conversational Search via Reinforcement Learning. In Proceedings of the Web Conference 2021 (pp. 1968-1977).
+
+This repository is based on the repository made available by the authors, which can be found [through this link](https://github.com/zhenduow/conversationalQA).
+
 A risk-aware conversational search system consisting of pretrained answer and question rerankers and a decision maker trained by reinforcement learning.
 
 ## Package requirements (recommended versions).
