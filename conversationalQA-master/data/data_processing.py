@@ -44,7 +44,8 @@ if __name__ == "__main__":
     incomplete_conversations = {}
 
     if args.dataset_name == 'MSDialog':
-        max_data_size = 3600
+        max_data_size = 4000
+        conv_lengths = []
         total_complete_size = 0
         with open('MSDialog-Complete.json') as f:
             data = json.load(f)
@@ -84,7 +85,8 @@ if __name__ == "__main__":
                         total_complete_size += 1
                         if total_complete_size <= max_data_size:
                             complete_conversations[k] = conversation
-
+                            conv_lengths.append(len(conversation))
+                        
                     elif len(conversation) % 2 == 1:
                         conversation = conversation[:-1]
                         incomplete_conversations[k] = conversation
@@ -114,6 +116,9 @@ if __name__ == "__main__":
                     if 2 <= len(conversation) <= 20 :
                         incomplete_conversations[k] = conversation
         
+        print("Number of conversations", total_complete_size)
+        print("Average length of conversation", np.mean(conv_lengths))
+
         # split data into folds and write to file
         all_data_list = list(complete_conversations.keys())
         fold_size = int(len(all_data_list)/args.n_folds)
@@ -145,7 +150,7 @@ if __name__ == "__main__":
         total_complete_size, total_incomplete_size = 0, 0
         all_folders = glob.glob('ubuntu_raw_dialogs/*')
         conversation_serial = 0
-        for tqdm(folder in all_folders) :
+        for folder in tqdm(all_folders):
             all_files = glob.glob(folder + '/*')
             for f in all_files:
                 if total_complete_size >= max_data_size and total_incomplete_size > max_data_size:
