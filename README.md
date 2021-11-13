@@ -154,7 +154,8 @@ $ python3  run_sampling.py --dataset_name MSDialog --reranker_name Poly --topn 1
     
 The experiment would take a couple of hours to one day. So, it's recommended to save the results to a log file (add `> your_log_file` to your command).
 
-### 3.2 Run the BM25 negative sampling experiments. To run the experiments, use the following code:
+### 3.2 Run the BM25 negative sampling experiments. 
+
 To run the extension of our reproduction study that uses globally sampled BM25 negatives, first install bm25 using:
 
 `pip install rank-bm25 (0.2.1)`
