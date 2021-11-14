@@ -4,7 +4,9 @@
 
 This repository has been used to perform a reproduction study of the following paper:
 
-Wang, Z., & Ai, Q. (2021, April). Controlling the Risk of Conversational Search via Reinforcement Learning. In Proceedings of the Web Conference 2021 (pp. 1968-1977).
+_Wang, Z., & Ai, Q. (2021, April). Controlling the Risk of Conversational Search via Reinforcement Learning. In Proceedings of the Web Conference 2021 (pp. 1968-1977)._
+
+
 This repository is based on the repository made available by the authors, which can be found [through this link](https://github.com/zhenduow/conversationalQA). The original paper can be found [here](https://dl.acm.org/doi/abs/10.1145/3442381.3449893) and the reproduction study can be found [here](https://github.com/jochemsoons/risk_aware_conversationalQA/blob/main/Reproduction_Study__Controlling_the_Risk_of_Conversational_Search_via_Reinforcement_Learning.pdf).
 
 - Authors of reproduction study: Jochem Soons, Niek IJzerman & Jeroen van Wely
