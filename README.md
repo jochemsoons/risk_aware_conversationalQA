@@ -160,7 +160,7 @@ The experiment would take a couple of hours to one day. So, it is recommended to
 
 To run the extension of our reproduction study that uses globally sampled BM25 negatives, first install rank-bm25 using:
 
-    pip install rank-bm25 (0.2.1)
+    $ pip install rank-bm25 (0.2.1)
 
 Then you can run the code by:
 
