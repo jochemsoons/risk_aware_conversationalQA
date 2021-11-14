@@ -4,8 +4,7 @@
 
 This repository has been used to perform a reproduction study of the following paper:
 
-    Wang, Z., & Ai, Q. (2021, April). Controlling the Risk of Conversational Search via Reinforcement Learning. In Proceedings of the Web Conference 2021 (pp. 1968-1977).
-
+Wang, Z., & Ai, Q. (2021, April). Controlling the Risk of Conversational Search via Reinforcement Learning. In Proceedings of the Web Conference 2021 (pp. 1968-1977).
 This repository is based on the repository made available by the authors, which can be found [through this link](https://github.com/zhenduow/conversationalQA). The original paper can be found [here](https://dl.acm.org/doi/abs/10.1145/3442381.3449893) and the reproduction study can be found [here](https://github.com/jochemsoons/risk_aware_conversationalQA/blob/main/Reproduction_Study__Controlling_the_Risk_of_Conversational_Search_via_Reinforcement_Learning.pdf).
 
 - Authors of reproduction study: Jochem Soons, Niek IJzerman & Jeroen van Wely
@@ -13,32 +12,33 @@ This repository is based on the repository made available by the authors, which 
 - Supervisors: Mohammad Alian Nejadi & Evangelos Kanoulas.
 
 ## Requirements
+
 In the ParlAi folder, a requirements.txt file can be found that can be used to install required packages. We suggest to use an [Anaconda](https://docs.conda.io/en/latest/) environment. That can be installed using the environment.yml file in this repository:
 
 ```
 $ conda env create -f environment.yml
 $ conda activate risk_aware_agent
 ```
-
 ## How to use
+
 There are three steps to reproduce results of the original paper and our reproduction study:
 
-### 1. Preprocess data. 
+### 1. Preprocess data.
 
 Here we use [MSDialog dataset](https://ciir.cs.umass.edu/downloads/msdialog/) as example. You can also set dataset_name to be 'UDC' for [Ubuntu Dialog Corpus](http://dataset.cs.mcgill.ca/ubuntu-corpus-1.0/) or 'opendialkg' for [Opendialkg](https://github.com/facebookresearch/opendialkg).
- 
- First, download MSDialog-Complete.json into /data.
- 
+
+First, download MSDialog-Complete.json into /data:
+
 ```
 $ cd data
 $ python3 data_processing.py --dataset_name MSDialog
 ```
+This will process and filter the data. All conversations that meet the filtering criterion are saved in MSDialog-Complete and will be automatically split into training and testing sets. The others are saved in MSDialog-Incomplete. The former are used for the main experiments and the latter is used for fine-tuning the rerankers. The data processing code uses `random.seed(2020)` to fix the result of data generation.
 
- This will process and filter the data. All conversations that meet the filtering criterion are saved in MSDialog-Complete and will be automatically split into training and testing sets. The others are saved in MSDialog-Incomplete. The former are used for the main experiments and the latter is used for fine-tuning the rerankers. The data processing code uses `random.seed(2020)` to fix the result of data generation.
-    
-### 2. Fine-tune the pretrained reranker 
+### 2. Fine-tune the pretrained reranker
 
 Fine-tune the rerankers on the answer and question training samples (MSDialog as example). The training of the rerankers is based on [ParlAI]       (https://github.com/facebookresearch/ParlAI)
+
 ```
 $ cd ParlAI
 $ python3 -u examples/train_model.py \
@@ -80,12 +80,12 @@ $ python3 -u examples/train_model.py \
     --model-file zoo:pretrained_transformers/model_poly/question \
     --ignore-bad-candidates True  --eval-candidates batch
 ```
-
 This will download the poly-encoder checkpoints pretrained on the huge reddit dataset and fine-tune it on our preprocessed dataset. The fine-tuned model is save in ParlAI/data/models/pretrained_transformers/model_poly/.
-    
+
 If you get an error of dictionary size mismatching, this is because the pretrained model checkpoints has a dictionary that is larger than the fine-tuned dataset. To solve this problem, before running the fine-tuning script, copy the downloaded pretrained dict file `ParlAI/data/models/pretrained_transformers/poly_model_huge_reddit/model.dict` to `ParlAI/data/models/pretrained_transformers/model_poly/` twice and rename them to `answer.dict` and `question.dict`. Then run the above fine-tuning script. Perform the same steps for the bi-directional encoder (i.e. copy the model.dict file twice from the ./bi_model_huge_reddit folder to the model_bi folder, and name them again answer.dict and question.dict).
 
 Now you can run the previous and following scripts without getting an error of dictionary size mismatching:
+
 ```
 $ cd ParlAI
 $ python3 -u examples/train_model.py \
@@ -131,33 +131,30 @@ $ python3 -u examples/train_model.py \
     --model-file zoo:pretrained_transformers/model_bi/question\
     --ignore-bad-candidates True  --eval-candidates batch
 ```
-    
 The fine-tuning code is based on [ParlAI poly-encoder](https://github.com/facebookresearch/ParlAI/tree/master/projects/polyencoder/), but we modified several scripts for our needs. We do not recommended downloading the original ParlAI code and replace the ParlAI folder in this program. The original training of the encoders are done on 8 x GPU 32GB. We decreased the batch size and therefore the code is able to run it on 4 x GPU 11GB (GeForce RTX 2080Ti).
-    
-  
-### 3.1 Run the main experiments. 
+
+### 3.1 Run the main experiments.
 
 To run the experiments, use the following code:
 
 ```
 $ python3  run_sampling.py --dataset_name MSDialog --reranker_name Poly --topn 1 --cv 0 > your_log_file
 ```
-    
 - `--dataset_name` can be 'MSDialog', 'UDC', or 'Opendialkg' currently.
 - `--reranker_name` can be 'Poly' or 'Bi' currently.
-- `--topn` means the top n reranked candidates are considered correct, i.e. `--topn 1` computes recall@1. 
-- `--cv` selects the cross validation fold. Because the MSDialog is small it is adviced to use cross validation. `--cv` can be set to 0,1,2,3,4 for the MSDialog dataset. Set `--cv -1` if you want to turn of cross validation. 
-- `--n_epochs` sets the amount of epochs. 
-- `--batch_size` sets the batch size. 
-- `--cq_reward` sets the reward if a correct question is asked. 
-- `--user_patience` corresponds to the maximum amount of turns between user and agent before the user leaves the conversation. 
-- `--user_tolerance` corresponds to the amount of bad questions that can be asked before the user leaves the conversation. 
-- `--seed` is an optional argument that sets the seed to run the experiments. 
+- `--topn` means the top n reranked candidates are considered correct, i.e. `--topn 1` computes recall@1.
+- `--cv` selects the cross validation fold. Because the MSDialog is small it is adviced to use cross validation. `--cv` can be set to 0,1,2,3,4 for the MSDialog dataset. Set `--cv -1` if you want to turn of cross validation.
+- `--n_epochs` sets the amount of epochs.
+- `--batch_size` sets the batch size.
+- `--cq_reward` sets the reward if a correct question is asked.
+- `--user_patience` corresponds to the maximum amount of turns between user and agent before the user leaves the conversation.
+- `--user_tolerance` corresponds to the amount of bad questions that can be asked before the user leaves the conversation.
+- `--seed` is an optional argument that sets the seed to run the experiments.
 - `--path_to_parlai` should correspond to the path to the ParlAI map.
-    
+
 The experiment would take a couple of hours to one day. So, it is recommended to save the results to a log file (add `> your_log_file` to your command).
 
-### 3.2 Run the BM25 negative sampling experiments. 
+### 3.2 Run the BM25 negative sampling experiments.
 
 To run the extension of our reproduction study that uses globally sampled BM25 negatives, first install rank-bm25 using:
 
@@ -168,10 +165,8 @@ Then you can run the code by:
 ```
 $ python3  run_sampling_bm25.py --dataset_name MSDialog --reranker_name Poly --topn 1 --cv 0 > your_log_file
 ```
-
 Similarly to the main experiments, arguments can be adjusted.
-    
-    
+
 ## Reference
 
 Please cite the work of Wang and Ai if you use this code repository in your work:
