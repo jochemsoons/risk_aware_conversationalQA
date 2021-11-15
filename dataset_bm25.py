@@ -48,7 +48,7 @@ class ConversationDataset_BM25():
             doc_scores = bm25.get_scores(tokenized_query)
             best_scores_indexes = (-doc_scores).argsort()
 
-            # create batches of positive and best BM25 negatives (under restriction that negative can only occur 1 time in all batches)
+            # create batches of positive and best BM25 negatives
             batch = {'conversations':{}, 'responses_pool':[], 'answers_pool':[]}
             for j in range(batch_size):
                 
