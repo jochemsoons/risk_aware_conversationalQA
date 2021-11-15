@@ -18,7 +18,6 @@ class ConversationDataset_BM25():
         all_data_list = all_data_list[:max_size] # max size
         files_in_batch = 0
         data_ids, conversations, conversations_tokenized = [],[], []
-        seen_indexes = []
 
         # append data ids, conversations and tokenized conversations to lists
         for data_file in all_data_list:
