@@ -40,7 +40,6 @@ class ConversationDataset_BM25():
         bm25 = BM25Okapi(conversations_tokenized)
 
         # loop over conversations
-        # while len(self.batches) != int(len(conversations)/batch_size): 
         for i in range(len(conversations)):
 
             # tokenize query and corpus and calculate best matching documents given BM25
